@@ -33,6 +33,16 @@ namespace UnityStandardAssets.Characters.FirstPerson
             float yRot = CrossPlatformInputManager.GetAxis("Mouse X") * XSensitivity;
             float xRot = CrossPlatformInputManager.GetAxis("Mouse Y") * YSensitivity;
 
+            //Smooth static position of the View Joystick
+            if (Mathf.Abs(yRot) < 0.1f)
+            {
+                if (Mathf.Abs(xRot) < 0.1f)
+                {
+                    yRot = 0.0f;
+                    xRot = 0.0f;
+                }
+            }
+
             m_CharacterTargetRot *= Quaternion.Euler (0f, yRot, 0f);
             m_CameraTargetRot *= Quaternion.Euler (-xRot, 0f, 0f);
 
