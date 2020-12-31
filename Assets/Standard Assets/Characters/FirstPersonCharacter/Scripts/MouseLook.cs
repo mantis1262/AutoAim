@@ -15,6 +15,9 @@ namespace UnityStandardAssets.Characters.FirstPerson
         public bool smooth;
         public float smoothTime = 5f;
         public bool lockCursor = true;
+        [Range(0, 4)] public int AimGrade;
+        [Range(0.1f, 1f)] public float SlowSpeed = 1.0f; 
+        [Range(1f, 2f)] public float FastSpeed = 1.0f; 
 
 
         private Quaternion m_CharacterTargetRot;
@@ -32,8 +35,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
         {
             float yRot = CrossPlatformInputManager.GetAxis("Mouse X") * XSensitivity;
             float xRot = CrossPlatformInputManager.GetAxis("Mouse Y") * YSensitivity;
+            float rotationSpeed = 1.0f;
 
-            //Smooth static position of the View Joystick
             if (Mathf.Abs(yRot) < 0.1f)
             {
                 if (Mathf.Abs(xRot) < 0.1f)
@@ -43,8 +46,39 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 }
             }
 
-            m_CharacterTargetRot *= Quaternion.Euler (0f, yRot, 0f);
-            m_CameraTargetRot *= Quaternion.Euler (-xRot, 0f, 0f);
+            Debug.Log("przed switchem");
+            Debug.Log(AimGrade);
+
+
+            switch (AimGrade)
+            { 
+                case 0:
+                    break;
+                case 1:
+                    Collider collider = character.GetComponent<Collider>();
+                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); // zmieniæ na pozycie celownika
+                    RaycastHit hit;
+                    Debug.Log("1 TRYB");
+                        if(collider.Raycast(ray, out hit, 50.0f))
+                    {
+                        Debug.Log("Trafiony");
+                        Debug.Log(hit.collider.tag);
+                        if (hit.collider.tag == "Aimable")
+                            rotationSpeed = SlowSpeed;
+                    }
+                    break;
+                case 2:
+
+                    break;
+                case 3:
+
+                    break;
+                default:
+                    break;
+            }
+
+            m_CharacterTargetRot *= Quaternion.Euler (0f, yRot * rotationSpeed, 0f);
+            m_CameraTargetRot *= Quaternion.Euler (-xRot * rotationSpeed, 0f, 0f);
 
             if(clampVerticalRotation)
                 m_CameraTargetRot = ClampRotationAroundXAxis (m_CameraTargetRot);
@@ -55,12 +89,12 @@ namespace UnityStandardAssets.Characters.FirstPerson
                     smoothTime * Time.deltaTime);
                 camera.localRotation = Quaternion.Slerp (camera.localRotation, m_CameraTargetRot,
                     smoothTime * Time.deltaTime);
-            }
+           }
             else
-            {
+           {
                 character.localRotation = m_CharacterTargetRot;
                 camera.localRotation = m_CameraTargetRot;
-            }
+           }
 
             UpdateCursorLock();
         }

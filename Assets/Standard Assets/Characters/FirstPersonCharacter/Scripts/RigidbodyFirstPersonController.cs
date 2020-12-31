@@ -227,7 +227,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             {
                 // Rotate the rigidbody velocity to match the new direction that the character is looking
                 Quaternion velRotation = Quaternion.AngleAxis(transform.eulerAngles.y - oldYRotation, Vector3.up);
-                m_RigidBody.velocity = velRotation*m_RigidBody.velocity;
+                m_RigidBody.velocity = velRotation * m_RigidBody.velocity ;
             }
         }
 
