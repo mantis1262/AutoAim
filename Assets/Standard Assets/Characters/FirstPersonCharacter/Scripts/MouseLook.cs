@@ -22,8 +22,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         [SerializeField] private float AimDistance = 20.0f;        
         [SerializeField] private GameObject m_aim;
-        private Quaternion m_CharacterTargetRot;
-        private Quaternion m_CameraTargetRot;
+        private Quaternion _CharacterTargetRot;
+        private Quaternion _CameraTargetRot;
         private bool m_cursorIsLocked = true;
         private bool _isLockedOn = false;
         private Transform _target;
@@ -32,8 +32,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         public void Init(Transform character, Transform camera)
         {
-            m_CharacterTargetRot = character.localRotation;
-            m_CameraTargetRot = camera.localRotation;
+            _CharacterTargetRot = character.localRotation;
+            _CameraTargetRot = camera.localRotation;
         }
 
 
@@ -42,40 +42,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
             if (_isLockedOn)
             {
-                if(CrossPlatformInputManager.GetButtonUp("Fire2"))
-                {
-                    _isLockedOn = false;
-                    return;
-                }
-
-                if (AimGrade == 3)
-                {
-                    if (CrossPlatformInputManager.GetButtonUp("Fire1"))
-                    {
-                        _indexAimableObject++;
-                        if (_indexAimableObject >= _aimableObject.Length)
-                            _indexAimableObject = 0;
-                        _target = _aimableObject[_indexAimableObject].transform;
-                    }
-
-                        if (Vector3.Distance(_target.position, character.position) > AimDistance)
-                    {
-                        _indexAimableObject++;
-                        if (_indexAimableObject >= _aimableObject.Length)
-                            _indexAimableObject = 0;
-                        _target = _aimableObject[_indexAimableObject].transform;
-                    }
-                }
-
-                if (AimDistance < Vector3.Distance(character.position, _target.position))
-                {
-                    _isLockedOn = false;
-
-                //    m_CharacterTargetRot = character.rotation;
-                  //  m_CameraTargetRot = camera.rotation;
-                }
-                character.transform.LookAt(_target);
-                camera.transform.LookAt(_target);
+                AutoAim(character, camera);
                 return;
             }
 
@@ -96,9 +63,9 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
             switch (AimGrade)
             { 
-                case 0:
+                case 0:         //Normal aim
                     break;
-                case 1:
+                case 1:         //Slow aim
                     RaycastHit hit;
                         if(Physics.Raycast(character.transform.position, character.transform.forward, out hit, AimDistance))
                     {
@@ -106,55 +73,104 @@ namespace UnityStandardAssets.Characters.FirstPerson
                             rotationSpeed = SlowSpeed;
                     }
                     break;
-                case 2:
+                case 2:        // Autoaim on aimed target (if in distance)
                     if (!_isLockedOn && CrossPlatformInputManager.GetButton("Fire2"))
                     {
                         RaycastHit hit2;
                         if (Physics.Raycast(character.transform.position, character.transform.forward, out hit2, AimDistance))
                         {
                             if (hit2.collider.tag == "Aimable")
-
                             {
-                                _isLockedOn = true;
-                                _target = hit2.collider.gameObject.transform;
+                                Adujst_Target(true, hit2.collider.gameObject.transform);
                             }
                         }
                     }
                     break;
-                case 3:
+                case 3:        //Autoaim with changing aimed object (if in distance)
                     if (!_isLockedOn && CrossPlatformInputManager.GetButton("Fire2"))
                     {
                         _aimableObject = GameObject.FindGameObjectsWithTag("Aimable");
-                        _isLockedOn = true;
-                        _target = _aimableObject[0].transform;
+                        int i = 0;
+                        do
+                        {
+                            if (!NotInDistance(character,_aimableObject[i].transform))
+                            {
+                                _indexAimableObject = i;
+                                _isLockedOn = true;
+                                Adujst_Target(true, _aimableObject[_indexAimableObject].transform);
 
+                            }
+                            else
+                            {
+                                i++;
+                                if (i >= _aimableObject.Length)
+                                    break;
+                            }
+                        } while (!_isLockedOn);
                     }
-                        break;
+                    break;
                 default:
                     break;
             }
 
-            m_CharacterTargetRot *= Quaternion.Euler (0f, yRot * rotationSpeed, 0f);
-            m_CameraTargetRot *= Quaternion.Euler (-xRot * rotationSpeed, 0f, 0f);
+            _CharacterTargetRot *= Quaternion.Euler (0f, yRot * rotationSpeed, 0f);
+            _CameraTargetRot *= Quaternion.Euler (-xRot * rotationSpeed, 0f, 0f);
 
             if(clampVerticalRotation)
-                m_CameraTargetRot = ClampRotationAroundXAxis (m_CameraTargetRot);
+                _CameraTargetRot = ClampRotationAroundXAxis (_CameraTargetRot);
 
-           // if(smooth)
-           // {
-           //     character.localRotation = Quaternion.Slerp (character.localRotation, m_CharacterTargetRot,
-           //         smoothTime * Time.deltaTime);
-           //     camera.localRotation = Quaternion.Slerp (camera.localRotation, m_CameraTargetRot,
-           //         smoothTime * Time.deltaTime);
-           //}
-           // else
-           //{
-                character.localRotation = m_CharacterTargetRot;
-                camera.localRotation = m_CameraTargetRot;
-       //    }
+                character.localRotation = _CharacterTargetRot;
+                camera.localRotation = _CameraTargetRot;
+
 
             UpdateCursorLock();
+
         }
+
+    private bool NotInDistance(Transform character, Transform target)
+    {
+        return Vector3.Distance(target.position, character.position) > AimDistance;
+    }
+
+    private void AutoAim(Transform character, Transform camera)
+    {
+        if (CrossPlatformInputManager.GetButtonUp("Fire2"))
+        {
+            _CharacterTargetRot = character.transform.localRotation;
+            _CameraTargetRot = camera.transform.localRotation;
+            _isLockedOn = false;
+            return;
+        }
+
+        if (AimGrade == 3)
+        {
+            if (CrossPlatformInputManager.GetButtonUp("Fire1"))
+            {
+                _indexAimableObject++;
+                if (_indexAimableObject >= _aimableObject.Length)
+                    _indexAimableObject = 0;
+                Adujst_Target(true, _aimableObject[_indexAimableObject].transform);
+            }
+
+            if (NotInDistance(character,_target))
+            {
+                _indexAimableObject++;
+                if (_indexAimableObject >= _aimableObject.Length)
+                    _indexAimableObject = 0;
+                 Adujst_Target(true, _aimableObject[_indexAimableObject].transform);
+            }
+        }
+
+        if (NotInDistance(character, _target))
+        {
+            Adujst_Target(false, null);
+            _CharacterTargetRot = character.transform.localRotation;
+            _CameraTargetRot = camera.transform.localRotation;
+        }
+        character.transform.LookAt(_target);
+        camera.transform.LookAt(_target);
+        return;
+    }
 
         public void SetCursorLock(bool value)
         {

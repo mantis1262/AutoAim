@@ -732,7 +732,7 @@ MonoBehaviour:
     smooth: 0
     smoothTime: 18
     lockCursor: 1
-    AimGrade: 2
+    AimGrade: 3
     SlowSpeed: 0.247
     AimDistance: 5
     m_aim: {fileID: 1884174789}
