@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityStandardAssets.CrossPlatformInput;
 
@@ -15,14 +16,19 @@ namespace UnityStandardAssets.Characters.FirstPerson
         public bool smooth;
         public float smoothTime = 5f;
         public bool lockCursor = true;
+
         [Range(0, 4)] public int AimGrade;
-        [Range(0.1f, 1f)] public float SlowSpeed = 1.0f; 
-        [Range(1f, 2f)] public float FastSpeed = 1.0f; 
+        [Range(0.1f, 1f)] public float SlowSpeed = 1.0f;
 
-
+        [SerializeField] private float AimDistance = 20.0f;        
+        [SerializeField] private GameObject m_aim;
         private Quaternion m_CharacterTargetRot;
         private Quaternion m_CameraTargetRot;
         private bool m_cursorIsLocked = true;
+        private bool _isLockedOn = false;
+        private Transform _target;
+        private GameObject[] _aimableObject;
+        private int _indexAimableObject = 0;
 
         public void Init(Transform character, Transform camera)
         {
@@ -33,8 +39,50 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         public void LookRotation(Transform character, Transform camera)
         {
+
+            if (_isLockedOn)
+            {
+                if(CrossPlatformInputManager.GetButtonUp("Fire2"))
+                {
+                    _isLockedOn = false;
+                    return;
+                }
+
+                if (AimGrade == 3)
+                {
+                    if (CrossPlatformInputManager.GetButtonUp("Fire1"))
+                    {
+                        _indexAimableObject++;
+                        if (_indexAimableObject >= _aimableObject.Length)
+                            _indexAimableObject = 0;
+                        _target = _aimableObject[_indexAimableObject].transform;
+                    }
+
+                        if (Vector3.Distance(_target.position, character.position) > AimDistance)
+                    {
+                        _indexAimableObject++;
+                        if (_indexAimableObject >= _aimableObject.Length)
+                            _indexAimableObject = 0;
+                        _target = _aimableObject[_indexAimableObject].transform;
+                    }
+                }
+
+                if (AimDistance < Vector3.Distance(character.position, _target.position))
+                {
+                    _isLockedOn = false;
+
+                //    m_CharacterTargetRot = character.rotation;
+                  //  m_CameraTargetRot = camera.rotation;
+                }
+                character.transform.LookAt(_target);
+                camera.transform.LookAt(_target);
+                return;
+            }
+
+
             float yRot = CrossPlatformInputManager.GetAxis("Mouse X") * XSensitivity;
             float xRot = CrossPlatformInputManager.GetAxis("Mouse Y") * YSensitivity;
+
             float rotationSpeed = 1.0f;
 
             if (Mathf.Abs(yRot) < 0.1f)
@@ -46,33 +94,42 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 }
             }
 
-            Debug.Log("przed switchem");
-            Debug.Log(AimGrade);
-
-
             switch (AimGrade)
             { 
                 case 0:
                     break;
                 case 1:
-                    Collider collider = character.GetComponent<Collider>();
-                    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition); // zmieniæ na pozycie celownika
                     RaycastHit hit;
-                    Debug.Log("1 TRYB");
-                        if(collider.Raycast(ray, out hit, 50.0f))
+                        if(Physics.Raycast(character.transform.position, character.transform.forward, out hit, AimDistance))
                     {
-                        Debug.Log("Trafiony");
-                        Debug.Log(hit.collider.tag);
                         if (hit.collider.tag == "Aimable")
                             rotationSpeed = SlowSpeed;
                     }
                     break;
                 case 2:
+                    if (!_isLockedOn && CrossPlatformInputManager.GetButton("Fire2"))
+                    {
+                        RaycastHit hit2;
+                        if (Physics.Raycast(character.transform.position, character.transform.forward, out hit2, AimDistance))
+                        {
+                            if (hit2.collider.tag == "Aimable")
 
+                            {
+                                _isLockedOn = true;
+                                _target = hit2.collider.gameObject.transform;
+                            }
+                        }
+                    }
                     break;
                 case 3:
+                    if (!_isLockedOn && CrossPlatformInputManager.GetButton("Fire2"))
+                    {
+                        _aimableObject = GameObject.FindGameObjectsWithTag("Aimable");
+                        _isLockedOn = true;
+                        _target = _aimableObject[0].transform;
 
-                    break;
+                    }
+                        break;
                 default:
                     break;
             }
@@ -83,18 +140,18 @@ namespace UnityStandardAssets.Characters.FirstPerson
             if(clampVerticalRotation)
                 m_CameraTargetRot = ClampRotationAroundXAxis (m_CameraTargetRot);
 
-            if(smooth)
-            {
-                character.localRotation = Quaternion.Slerp (character.localRotation, m_CharacterTargetRot,
-                    smoothTime * Time.deltaTime);
-                camera.localRotation = Quaternion.Slerp (camera.localRotation, m_CameraTargetRot,
-                    smoothTime * Time.deltaTime);
-           }
-            else
-           {
+           // if(smooth)
+           // {
+           //     character.localRotation = Quaternion.Slerp (character.localRotation, m_CharacterTargetRot,
+           //         smoothTime * Time.deltaTime);
+           //     camera.localRotation = Quaternion.Slerp (camera.localRotation, m_CameraTargetRot,
+           //         smoothTime * Time.deltaTime);
+           //}
+           // else
+           //{
                 character.localRotation = m_CharacterTargetRot;
                 camera.localRotation = m_CameraTargetRot;
-           }
+       //    }
 
             UpdateCursorLock();
         }
@@ -154,6 +211,11 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
             return q;
         }
-
+        
+        public void Adujst_Target(bool isLocked, Transform target)
+        {
+            _isLockedOn = isLocked;
+            _target = target;
+        }
     }
 }
