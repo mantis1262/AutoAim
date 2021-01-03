@@ -152,7 +152,15 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 Adujst_Target(true, _aimableObject[_indexAimableObject].transform);
             }
 
-            if (NotInDistance(character,_target))
+            if (CrossPlatformInputManager.GetButtonUp("Fire3"))
+            {
+                _indexAimableObject--;
+                if (_indexAimableObject >= _aimableObject.Length)
+                    _indexAimableObject = 0;
+                Adujst_Target(true, _aimableObject[_indexAimableObject].transform);
+            }
+
+                if (NotInDistance(character,_target))
             {
                 _indexAimableObject++;
                 if (_indexAimableObject >= _aimableObject.Length)

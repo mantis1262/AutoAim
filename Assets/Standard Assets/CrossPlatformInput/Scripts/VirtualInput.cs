@@ -13,8 +13,6 @@ namespace UnityStandardAssets.CrossPlatformInput
         protected Dictionary<string, CrossPlatformInputManager.VirtualAxis> m_VirtualAxes =
             new Dictionary<string, CrossPlatformInputManager.VirtualAxis>();
             // Dictionary to store the name relating to the virtual axes
-        protected Dictionary<string, CrossPlatformInputManager.VirtualButton> m_VirtualButtons =
-            new Dictionary<string, CrossPlatformInputManager.VirtualButton>();
         protected List<string> m_AlwaysUseVirtual = new List<string>();
             // list of the axis and button names that have been flagged to always use a virtual axis or button
         
@@ -23,12 +21,6 @@ namespace UnityStandardAssets.CrossPlatformInput
         {
             return m_VirtualAxes.ContainsKey(name);
         }
-
-        public bool ButtonExists(string name)
-        {
-            return m_VirtualButtons.ContainsKey(name);
-        }
-
 
         public void RegisterVirtualAxis(CrossPlatformInputManager.VirtualAxis axis)
         {
@@ -49,48 +41,6 @@ namespace UnityStandardAssets.CrossPlatformInput
                 }
             }
         }
-
-
-        public void RegisterVirtualButton(CrossPlatformInputManager.VirtualButton button)
-        {
-            // check if already have a buttin with that name and log an error if we do
-            if (m_VirtualButtons.ContainsKey(button.name))
-            {
-                Debug.LogError("There is already a virtual button named " + button.name + " registered.");
-            }
-            else
-            {
-                // add any new buttons
-                m_VirtualButtons.Add(button.name, button);
-
-                // if we dont want to match to the input manager then always use a virtual axis
-                if (!button.matchWithInputManager)
-                {
-                    m_AlwaysUseVirtual.Add(button.name);
-                }
-            }
-        }
-
-
-        public void UnRegisterVirtualAxis(string name)
-        {
-            // if we have an axis with that name then remove it from our dictionary of registered axes
-            if (m_VirtualAxes.ContainsKey(name))
-            {
-                m_VirtualAxes.Remove(name);
-            }
-        }
-
-
-        public void UnRegisterVirtualButton(string name)
-        {
-            // if we have a button with this name then remove it from our dictionary of registered buttons
-            if (m_VirtualButtons.ContainsKey(name))
-            {
-                m_VirtualButtons.Remove(name);
-            }
-        }
-
 
         // returns a reference to a named virtual axis if it exists otherwise null
         public CrossPlatformInputManager.VirtualAxis VirtualAxisReference(string name)

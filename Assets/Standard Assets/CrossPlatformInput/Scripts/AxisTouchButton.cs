@@ -49,13 +49,6 @@ namespace UnityStandardAssets.CrossPlatformInput
 			}
 		}
 
-		void OnDisable()
-		{
-			// The object is disabled so remove it from the cross platform input system
-			m_Axis.Remove();
-		}
-
-
 		public void OnPointerDown(PointerEventData data)
 		{
 			if (m_PairedWith == null)
