@@ -79,7 +79,6 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         private Rigidbody m_RigidBody;
         private CapsuleCollider m_Capsule;
-        private float m_YRotation;
         private Vector3 m_GroundContactNormal;
         private bool m_Jump, m_PreviouslyGrounded, m_Jumping, m_IsGrounded;
 
@@ -120,6 +119,20 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private void Update()
         {
             RotateView();
+
+            if(CrossPlatformInputManager.GetButtonDown("RightChange"))
+            {
+                mouseLook.AimGrade++;
+                if (mouseLook.AimGrade >= 4)
+                    mouseLook.AimGrade = 0;
+            }
+
+            if (CrossPlatformInputManager.GetButtonDown("LeftChange"))
+            {
+                mouseLook.AimGrade--;
+                if (mouseLook.AimGrade <= -1)
+                    mouseLook.AimGrade = 3;
+            }
 
             if (CrossPlatformInputManager.GetButtonDown("Jump") && !m_Jump)
             {
